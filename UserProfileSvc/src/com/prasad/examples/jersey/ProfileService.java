@@ -1,13 +1,18 @@
 package com.prasad.examples.jersey;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+
+import java.sql.SQLException;
+
 import java.util.HashMap;
-import java.util.Iterator;
+
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -24,6 +29,11 @@ import sun.misc.BASE64Decoder;
 @Path("/ProfileService")
 public class ProfileService 
 {
+	private static final int FIRST_NAME_MAX_LENGTH = 50;
+	private static final int LAST_NAME_MAX_LENGTH = 50;
+	private static final int EMAIL_MAX_LENGTH = 50;
+	private static final int PHONE_MAX_LENGTH = 50;
+	
 	static Map<Integer, Profile> profileMap = new HashMap<Integer, Profile>();	
 	private static AtomicInteger empNumber = new AtomicInteger();
 	
@@ -42,9 +52,62 @@ public class ProfileService
 			return Response.status(
 					Response.Status.FORBIDDEN).entity("You are not authorized!!").build();
         }
+		
+		//validations
+		if(p.getFirst_name() == null || 
+				p.getFirst_name().length()>FIRST_NAME_MAX_LENGTH)
+		{
+			return Response.status(
+					Response.Status.NOT_ACCEPTABLE).entity("First name is null or "
+							+ "exceeds max allowed value!!").build();
+		}
+		
+		//TODO other validations..
+		
 		int i = getEmpNumber();		
 		profileMap.put(i, p);
 		System.out.println("In POST Profiles.."+profileMap.toString());
+		
+		Connection c = null;
+		try 
+		{
+			c = new DBConnection().getConnection();
+		} 
+		catch (Exception e) 
+		{
+			return Response.status(
+					Response.Status.SERVICE_UNAVAILABLE).entity("Internal Error").build();
+		}
+		PreparedStatement ps = null;
+		try 
+		{
+			ps = c.prepareStatement("insert into userprofile (first_name, last_name, email, phone)"
+					+ "values (?,?,?,?)");
+			ps.setString(1, p.getFirst_name());
+			ps.setString(2, p.getLast_name());
+			ps.setString(3, p.getEmail());
+			ps.setString(4, p.getPhone());
+			System.out.println(ps.executeUpdate());
+			
+		} 
+		catch (SQLException e) 
+		{
+			return Response.status(
+					Response.Status.SERVICE_UNAVAILABLE).entity("Internal Error").build();
+		}
+		finally
+		{
+			try
+			{
+				ps.close();
+				c.close();
+			}
+			catch(Exception e)
+			{
+				System.out.println("Exception closing the resources..");
+			}
+		}
+		
 		return Response.status(Response.Status.OK).entity(String.valueOf(i)).build();
 	}
 	
@@ -94,6 +157,16 @@ public class ProfileService
 
 		return null;
 		
+	}
+	
+	@DELETE
+	@Path("/profiles")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response deleteProfiles()
+	{
+		return Response.status(
+				Response.Status.METHOD_NOT_ALLOWED).entity("Delete all profiles "
+						+ "is not supported!!").build();
 	}
 	
 	private boolean isUserAuthenticated(String authString){
