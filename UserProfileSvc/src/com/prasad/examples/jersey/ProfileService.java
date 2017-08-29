@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -45,6 +46,7 @@ public class ProfileService
 	@POST
 	@Path("/profiles")
 	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
 	public Response postProfiles(Profile p, @HeaderParam("authorization") String authString) 
 	{
 		if(!isUserAuthenticated(authString))
