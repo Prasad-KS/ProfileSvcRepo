@@ -1,8 +1,11 @@
 package com.prasad.examples.jersey;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.ws.rs.GET;
@@ -11,8 +14,10 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import sun.misc.BASE64Decoder;
 
@@ -60,10 +65,35 @@ public class ProfileService
 	@GET
 	@Path("/profiles/{id}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Profile getProfiles(@PathParam("id") int id) 
+	public Response getProfiles(@PathParam("id") int id, @HeaderParam("authorization") String authString) 
 	{	
+		if(!isUserAuthenticated(authString))
+		{
+            return Response.status(
+					Response.Status.FORBIDDEN).entity("You are not authorized!!").build();
+        }
 		System.out.println("In get Profiles by id.."+profileMap.toString());
-		return profileMap.get(id);		
+		return Response.status(Response.Status.OK).entity(profileMap.get(id)).build();		
+	}
+	
+	@GET @Path("/search")
+	@Produces({ MediaType.APPLICATION_JSON })
+	public Response search(@Context UriInfo  uriInfo) 
+	{
+		
+		//TODO - bad code of searching all values in the map!!
+		//currently, only searches on first name
+		String fName = uriInfo.getQueryParameters().getFirst("first_name");
+		for (Entry<Integer, Profile> entry : profileMap.entrySet()) {
+	        Profile p = entry.getValue();
+	        if (p.getFirst_name()!=null && p.getFirst_name().equals(fName))
+	        {
+	            System.out.println("got you!!" + entry.getKey());
+	        }
+	    }
+
+		return null;
+		
 	}
 	
 	private boolean isUserAuthenticated(String authString){

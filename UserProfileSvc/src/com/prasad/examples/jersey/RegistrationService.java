@@ -27,7 +27,7 @@ public class RegistrationService
 			return Response.status(
 					Response.Status.CONFLICT).entity("Already exists!!").build();
 		}
-		if(regInfo.getPassword() == null || regInfo.getPassword() == "")
+		if(regInfo.getPassword() == null || regInfo.getPassword().equals(""))
 		{
 			return Response.status(Response.Status.NOT_ACCEPTABLE).entity("Password criteria not met!").build();
 		}
